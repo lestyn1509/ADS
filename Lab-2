@@ -1,96 +1,131 @@
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-struct node{
+typedef struct Node {
     int data;
-    struct node *npx;
-};
-
-struct node *XOR(struct node *a, struct node *b)
+    struct Node* nxp;
+}Node;
+struct Node* XOR(struct Node* a,struct Node* b)
 {
-    return (struct node*)((unsigned int)(a)^(unsigned int)(b));
+    return (struct Node*)((uintptr_t)(a) ^ (uintptr_t)(b));
 }
-
-void insert(struct node **head_ref, int data)
+struct Node* insert(struct Node** head,int value, int position)
 {
-    struct node *new_node = (struct node*)malloc(sizeof(struct node));
-    new_node->data = data;
-    new_node->npx = XOR(*head_ref,NULL);
-    if(*head_ref!=NULL)
-    {
-        struct node *next = XOR((*head_ref)->npx, NULL);
-        (*head_ref)->npx = XOR(new_node,next);
+    if (*head == NULL) {
+        if (position == 1) {
+            struct Node* node = (struct Node*)malloc(sizeof(struct Node));
+            node->data = value;
+            node->nxp = XOR(NULL, NULL);
+            *head = node;
+        }
+        else {
+            printf("Invalid Position\n");
+        }
     }
-    *head_ref = new_node;
-}
-
-struct Node *del(struct Node** head,int ele)
-{
-    if (*head == NULL)
-        printf("List is empty");
     else {
-        struct node* curr = *head;
-        struct node* prev = NULL;
-        struct node* next;
-        while (XOR(curr->npx, prev) != ele) {
-            next = XOR(prev, curr->npx);
+        int Pos = 1;
+        struct Node* curr = *head;
+        struct Node* prev = NULL;
+        struct Node* next = XOR(prev, curr->nxp);
+        while (next != NULL && Pos < position - 1) {
             prev = curr;
             curr = next;
+            next = XOR(prev, curr->nxp);
+            Pos++;
         }
-        if (prev != NULL)
-            prev->npx = XOR(XOR(prev->npx, curr), NULL);
-        else
-            *head = NULL;
-        free(curr);
+        if (Pos == position - 1) {
+            struct Node* node = (struct Node*)malloc(sizeof(struct Node));
+            struct Node* temp = XOR(curr->nxp, next);
+            curr->nxp = XOR(temp, node);
+            if (next != NULL) {
+                next->nxp = XOR(node, XOR(next->nxp, curr));
+            }
+            node->nxp = XOR(curr, next);
+            node->data = value;
+        }
+        else if (position == 1) {
+            struct Node* node = (struct Node*)malloc(sizeof(struct Node));
+            curr->nxp = XOR(node, XOR(NULL, curr->nxp));
+            node->nxp = XOR(NULL, curr);
+            *head = node;
+            node->data = value;
+        }
+        else {
+
+            printf("Invalid Position\n");
+        }
     }
+
     return *head;
 }
-
-void printList(struct node *head){
-    struct node *curr = head;
-    struct node *prev = NULL;
-    struct node *next;
-
-    printf("Following are the nodes of Linked List: \n");
-
-    while(curr!=NULL)
-    {
-        printf("%d ",curr->
-        data);
-        next = XOR(prev,curr->npx);
+void printList(struct Node** head)
+{
+    struct Node* curr = *head;
+    struct Node* prev = NULL;
+    struct Node* next;
+    while (curr != NULL) {
+        printf("%d ", curr->data);
+        next = XOR(prev, curr->nxp);
         prev = curr;
         curr = next;
+
     }
 }
-
-int main() {
-   
-    struct node *head = NULL;
-    int ch;
-    int value;
-    while(1)
-    {
-        printf("\n1.Insert a Node \n2. Print the List of Nodes \n3.Delete \n4.Exit");
-        scanf("%d",&ch);
-        switch(ch)
-        {
-            case 1:
-            printf("\nEnter data value");
-            scanf("%d",&value);
-            insert(&head, value);
-            break;
-            case 2:
-            printList(head);
-            break;
-            case 3: 
-            del(&head ,ele);
-            printList(head);
-            break;
-            case 4:
-            exit(0);
-            break;
+int delete(Node** head, int key) {
+    if((*head) == NULL)
+        return -1;
+    if((*head)->data==key) {
+        Node* next = XOR(NULL, (*head)->nxp);
+        if(next!=NULL) {
+            next->nxp = XOR(NULL,XOR(next->nxp, (*head)));
         }
+        free(*head);
+        *head = next;
+        return 0;
     }
- 
-    return (0);
+    struct Node* curr = *head;
+    struct Node* prev = NULL;
+    while(curr!=NULL && curr->data!=key){
+        Node* temp = curr;
+        curr = XOR(curr->nxp, prev);
+        prev = temp;
+    }
+    if(curr==NULL) // key not found in list
+        return -1;
+    Node* prevPrev = XOR(prev->nxp, curr);
+    Node* next = XOR(curr->nxp, prev);
+    prev->nxp = XOR(prevPrev, next);
+    if(next!=NULL)
+        next->nxp = XOR(XOR(next->nxp, curr), prev);
+    free(curr);
+    return 0; // successful
+}
+
+int main()
+{
+    struct Node* head = NULL;
+    int data,pos,ch,ret;
+    while(1){
+    printf("\nEnter your choice: 1. Insert 2. Display 3. Delete 4. Exit\n");
+    scanf("%d",&ch);
+    switch(ch){
+    case 1:  printf("Enter the value:");
+    scanf("%d",&data);
+    printf("Enter the position:");
+    scanf("%d",&pos);
+    insert(&head, data, pos);
+    break;
+    case 2: printList(&head);
+    break;
+    case 3:  printf("\nEnter data to delete from the list : ");
+    scanf("%d", &data);
+    ret = delete(&head, data);
+    if(ret==-1)
+     printf("\n%d not found in list", data);
+    else
+     printf("\n%d deleted from the list", data);
+    break;
+    case 4: exit(0);
+    }
+    }
 }
